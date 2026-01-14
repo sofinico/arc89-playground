@@ -1,0 +1,54 @@
+import logging
+import os
+from dataclasses import dataclass
+from pathlib import Path
+
+from utils.setup import load_env_files
+
+# Logging config
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
+
+# General config
+_config = None
+
+
+@dataclass
+class Config:
+    network: str
+    arc90_netauth: str
+    metadata_registry_app_id: int
+
+
+def _load_config() -> Config:
+    network, _ = load_env_files(Path(__file__).resolve().parent)
+
+    if not os.getenv("ARC90_NETAUTH"):
+        raise ValueError("ARC90_NETAUTH environment variable is not set")
+    if not os.getenv("METADATA_REGISTRY_APP_ID"):
+        raise ValueError("METADATA_REGISTRY_APP_ID is not set. Run `make setup` or set it in .env.localnet")
+
+    cfg = Config(
+        network=network,
+        arc90_netauth=os.environ["ARC90_NETAUTH"],
+        metadata_registry_app_id=int(os.environ["METADATA_REGISTRY_APP_ID"]),
+    )
+    logger.info("Configuration loaded: %s", cfg.__dict__)
+    return cfg
+
+
+def get_config() -> Config:
+    global _config
+    if _config is None:
+        _config = _load_config()
+    return _config
+
+
+# Avoid eager config loading when running `python config.py` for the one-time setup.
+config = get_config() if __name__ != "__main__" else None
+
+
+if __name__ == "__main__":
+    from utils.setup import main
+
+    raise SystemExit(main())
