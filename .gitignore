@@ -1,5 +1,7 @@
 .venv/
 .env
+.env.localnet
+.env.testnet
 __pycache__
 .ruff_cache
 .mypy_cache
