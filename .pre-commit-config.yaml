@@ -1,6 +1,29 @@
 repos:
   - repo: local
     hooks:
+
+      - id: ruff-format
+        name: "Format Python (ruff)"
+        entry: poetry run ruff format
+        language: system
+        types: [python]
+        pass_filenames: true
+
+      - id: ruff-lint
+        name: "Lint Python (ruff)"
+        entry: poetry run ruff check
+        language: system
+        types: [python]
+        pass_filenames: true
+
+      - id: mypy
+        name: "Type check Python (mypy)"
+        entry: poetry run mypy .
+        language: system
+        pass_filenames: false
+        types_or: [python]
+        require_serial: true
+
       - id: check-yaml
         name: Check YAML syntax
         entry: poetry run check-yaml
@@ -18,25 +41,3 @@ repos:
         entry: poetry run mdformat
         language: system
         types: [markdown]
-
-      - id: ruff-format
-        name: "Run 'ruff format' for extremely fast Python formatting"
-        entry: uv run ruff format . --exclude=.venv/
-        language: system
-        types: [python]
-
-      - id: ruff-lint
-        name: "Run 'ruff' for extremely fast Python linting"
-        entry: poetry run ruff check
-        language: system
-        types: [python]
-        pass_filenames: true
-
-      - id: mypy
-        name: mypy
-        description: "`mypy` will check Python types for correctness"
-        entry: poetry run mypy
-        language: system
-        pass_filenames: true
-        types_or: [python]
-        require_serial: true

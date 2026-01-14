@@ -3,7 +3,7 @@ import logging
 import os
 from pathlib import Path
 
-from algokit_utils import AlgoAmount, AlgorandClient, PaymentParams, SigningAccount, AppClientCompilationParams
+from algokit_utils import AlgoAmount, AlgorandClient, AppClientCompilationParams, PaymentParams, SigningAccount
 from asa_metadata_registry import Arc90Uri
 from asa_metadata_registry import constants as const
 from asa_metadata_registry._generated.asa_metadata_registry_client import (
@@ -22,7 +22,7 @@ def _get_deployer(algorand: AlgorandClient) -> SigningAccount:
     return deployer
 
 
-def deploy(write_env: bool) -> None:
+def deploy(write_env: bool) -> int:
     algorand = AlgorandClient.from_environment()
     deployer = _get_deployer(algorand)
     algorand.account.set_signer(deployer.address, deployer.signer)
@@ -46,33 +46,30 @@ def deploy(write_env: bool) -> None:
             receiver=app_client.app_address,
             amount=AlgoAmount(micro_algo=const.ACCOUNT_MBR),
         )
-    )   
+    )
 
-    partial_uri = Arc90Uri(
-        netauth=os.environ["ARC90_NETAUTH"],
-        app_id=app_client.app_id,
-        box_name=None,
-    ).to_uri()
+    partial_uri = Arc90Uri(netauth=os.environ["ARC90_NETAUTH"], app_id=app_client.app_id, box_name=None).to_uri()
 
     logger.info("ASA Metadata Registry deployed")
     logger.info("App ID: %s", app_client.app_id)
     logger.info("ARC-90 Partial URI: %s", partial_uri)
 
     if write_env:
-        env_path = project_root / f".env.{os.getenv("NETWORK")}"
+        env_path = project_root / ".env.localnet"
         set_key(env_path, "METADATA_REGISTRY_APP_ID", str(app_client.app_id))
         logger.info("Updated %s with METADATA_REGISTRY_APP_ID", env_path)
 
-    return
+    return 0
 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     load_dotenv(dotenv_path=project_root / ".env")
-    load_dotenv(dotenv_path=project_root / f".env.{os.environ["NETWORK"]}")
-    if os.environ["NETWORK"] != "localnet":
-        raise ValueError("Unsupported network for this script: %s", os.environ["NETWORK"])
-    
+    network = os.getenv("NETWORK", "localnet")
+    load_dotenv(dotenv_path=project_root / f".env.{network}")
+    if network != "localnet":
+        raise ValueError(f"Unsupported network for this script: {network}")
+
     parser = argparse.ArgumentParser(description="Deploy the ASA Metadata Registry on LocalNet")
     parser.add_argument(
         "--write-env",
