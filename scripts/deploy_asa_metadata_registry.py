@@ -13,7 +13,8 @@ from algokit_utils import (
     PaymentParams,
     SigningAccount,
 )
-from asa_metadata_registry import Arc90Uri, constants as const
+from asa_metadata_registry import Arc90Uri
+from asa_metadata_registry import constants as const
 from asa_metadata_registry._generated.asa_metadata_registry_client import (
     AsaMetadataRegistryFactory,
 )
@@ -31,9 +32,7 @@ def _load_env(network: str) -> None:
     load_dotenv(dotenv_path=project_root / f".env.{network}")
 
 
-def _get_deployer(
-    algorand_client: AlgorandClient, network: str
-) -> SigningAccount:
+def _get_deployer(algorand_client: AlgorandClient, network: str) -> SigningAccount:
     try:
         deployer = algorand_client.account.from_environment("DEPLOYER")
         algorand_client.account.ensure_funded_from_environment(
@@ -48,9 +47,7 @@ def _get_deployer(
     logger.info("DEPLOYER not configured; using a random localnet account")
     deployer = algorand_client.account.random()
     dispenser = algorand_client.account.localnet_dispenser()
-    algorand_client.account.ensure_funded(
-        deployer.address, dispenser, AlgoAmount.from_algo(10)
-    )
+    algorand_client.account.ensure_funded(deployer.address, dispenser, AlgoAmount.from_algo(10))
     return deployer
 
 
@@ -136,9 +133,7 @@ def deploy(network: str, write_env: bool) -> int:
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    parser = argparse.ArgumentParser(
-        description="Deploy the ASA Metadata Registry to localnet"
-    )
+    parser = argparse.ArgumentParser(description="Deploy the ASA Metadata Registry to localnet")
     parser.add_argument(
         "--network",
         default=os.getenv("NETWORK", "localnet"),

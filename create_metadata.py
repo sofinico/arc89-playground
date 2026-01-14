@@ -27,6 +27,8 @@ from asa_metadata_registry import (
     IrreversibleFlags,
     MetadataFlags,
     ReversibleFlags,
+)
+from asa_metadata_registry import (
     constants as arc_consts,
 )
 from asa_metadata_registry._generated.asa_metadata_registry_client import (
@@ -84,6 +86,8 @@ def _get_asset_params(algorand_client: AlgorandClient, asset_id: int) -> dict[st
         info = algorand_client.client.algod.asset_info(asset_id)
     except Exception as exc:
         raise ValueError(f"Asset {asset_id} not found on network") from exc
+    if not isinstance(info, dict):
+        raise ValueError(f"Unexpected asset info type for {asset_id}")
     params = info.get("params", {})
     if not isinstance(params, dict):
         raise ValueError(f"Unexpected asset params for {asset_id}")
@@ -116,9 +120,7 @@ def _assert_preconditions(
     if not manager:
         raise ValueError("ASA has no manager; metadata updates are not permitted")
     if manager != caller.address:
-        raise ValueError(
-            f"Caller must be ASA manager (manager={manager}, caller={caller.address})"
-        )
+        raise ValueError(f"Caller must be ASA manager (manager={manager}, caller={caller.address})")
     if flags.irreversible.arc3 and not _is_arc3_compliant(params):
         raise ValueError("ARC-3 flag set but ASA is not ARC-3 compliant")
     if flags.irreversible.arc89_native:
@@ -129,14 +131,9 @@ def _assert_preconditions(
         ).to_uri()
         url = str(params.get("url") or "")
         if not url.startswith(partial_uri):
-            raise ValueError(
-                "ARC-89 native flag set but ASA URL does not start with the "
-                "ARC-90 partial URI"
-            )
+            raise ValueError("ARC-89 native flag set but ASA URL does not start with the " "ARC-90 partial URI")
 
-    existence = client.send.arc89_check_metadata_exists(
-        args=Arc89CheckMetadataExistsArgs(asset_id=asset_id)
-    ).abi_return
+    existence = client.send.arc89_check_metadata_exists(args=Arc89CheckMetadataExistsArgs(asset_id=asset_id)).abi_return
     if existence and existence.metadata_exists:
         raise ValueError("Metadata already exists for this ASA")
 
@@ -194,9 +191,7 @@ def create_arc89_metadata(
     header_info = _describe_headers(metadata)
 
     mbr_delta = metadata.get_mbr_delta(old_size=None)
-    mbr_payment = _create_mbr_payment_txn(
-        client, caller, int(mbr_delta.amount)
-    )
+    mbr_payment = _create_mbr_payment_txn(client, caller, int(mbr_delta.amount))
 
     chunks = metadata.body.chunked_payload()
     total_fee = (len(chunks) + 2) * _get_min_fee(client)
@@ -229,12 +224,14 @@ def create_arc89_metadata(
             ),
         )
 
-    response = composer.send(
-        send_params=SendParams(cover_app_call_inner_transaction_fees=True)
-    )
+    response = composer.send(send_params=SendParams(cover_app_call_inner_transaction_fees=True))
 
     asset_info = algorand_client.client.algod.asset_info(asset_id)
+    if not isinstance(asset_info, dict):
+        raise ValueError(f"Unexpected asset info type for {asset_id}")
     asset_params = asset_info.get("params", {})
+    if not isinstance(asset_params, dict):
+        raise ValueError(f"Unexpected asset params type for {asset_id}")
     asset_url = str(asset_params.get("url") or "")
     if not asset_url:
         raise ValueError("ASA URL is missing; cannot build ARC-90 URI")

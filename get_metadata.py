@@ -10,9 +10,7 @@ from setup import config, get_algorand_client, get_caller_signer
 DEFAULT_GET_METADATA_ASSET_ID = int(os.getenv("ASSET_ID", "0"))
 
 
-def get_metadata(
-    algorand_client: AlgorandClient, app_id: int, asset_id: int
-) -> dict[str, object]:
+def get_metadata(algorand_client: AlgorandClient, app_id: int, asset_id: int) -> dict[str, object]:
     reader = AlgodBoxReader(algod=algorand_client.client.algod)
     record = reader.get_asset_metadata_record(app_id=app_id, asset_id=asset_id)
     header = record.header

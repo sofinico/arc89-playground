@@ -2,18 +2,20 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from algokit_utils import AlgorandClient
 from algokit_utils.transactions import AssetCreateParams
+from asa_metadata_registry import Arc90Compliance, Arc90Uri
 
-from asa_metadata_registry import Arc90Uri, Arc90Compliance
 from setup import config, get_algorand_client, get_caller_address
 
 logger = logging.getLogger(__name__)
 
 
-def _create_partial_arc90_uri(compliance: Optional[Arc90Compliance] = None) -> str:
+def _create_partial_arc90_uri(compliance: Arc90Compliance | None = None) -> str:
+    if compliance is None:
+        compliance = Arc90Compliance(arcs=(89, 90))
     partial_uri = Arc90Uri(
         netauth=config.arc90_netauth,
         app_id=config.metadata_registry_app_id,

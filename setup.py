@@ -1,6 +1,5 @@
 import logging
 import os
-import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,9 +8,7 @@ from algosdk import account, mnemonic
 from dotenv import load_dotenv
 
 # Logging configuration
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Global variables
@@ -35,10 +32,18 @@ def _get_network() -> str:
 
 def _load_config() -> Config:
     """Load configuration from environment variables."""
+    arc90_netauth = os.getenv("ARC90_NETAUTH")
+    metadata_registry_app_id_str = os.getenv("METADATA_REGISTRY_APP_ID")
+    
+    if not arc90_netauth:
+        raise ValueError("ARC90_NETAUTH environment variable is not set")
+    if not metadata_registry_app_id_str:
+        raise ValueError("METADATA_REGISTRY_APP_ID environment variable is not set")
+    
     cfg = Config(
         network=_get_network(),
-        arc90_netauth=os.getenv("ARC90_NETAUTH"),
-        metadata_registry_app_id=int(os.getenv("METADATA_REGISTRY_APP_ID")),
+        arc90_netauth=arc90_netauth,
+        metadata_registry_app_id=int(metadata_registry_app_id_str),
     )
     logger.info(cfg.__dict__)
     return cfg
@@ -63,16 +68,17 @@ def get_algorand_client() -> AlgorandClient:
 
 def get_caller_address() -> str:
     caller_mnemonic = os.getenv("CALLER_MNEMONIC")
+    if not caller_mnemonic:
+        raise ValueError("CALLER_MNEMONIC environment variable is not set")
     private_key = mnemonic.to_private_key(caller_mnemonic)
-    return account.address_from_private_key(private_key)
+    address: str = account.address_from_private_key(private_key)
+    return address
 
 
 def get_caller_signer() -> SigningAccount:
     caller_mnemonic = os.getenv("CALLER_MNEMONIC")
     private_key = mnemonic.to_private_key(caller_mnemonic)
-    return SigningAccount(
-        address=account.address_from_private_key(private_key), private_key=private_key
-    )
+    return SigningAccount(address=account.address_from_private_key(private_key), private_key=private_key)
 
 
 # Main setup function
@@ -99,17 +105,13 @@ def setup_environment():
     # Handle missing mnemonic
     if not caller_mnemonic:
         if config.network != "localnet":
-            logger.warning(
-                "Set CALLER_MNEMONIC in a .env.testnet file or export it in your shell"
-            )
+            logger.warning("Set CALLER_MNEMONIC in a .env.testnet file or export it in your shell")
             raise ValueError("CALLER_MNEMONIC environment variable is not set")
 
         logger.info("CALLER_MNEMONIC not set - creating random account")
         random_account = algorand_client.account.random()
         logger.info(f"Created random account: {random_account.address}")
-        os.environ["CALLER_MNEMONIC"] = mnemonic.from_private_key(
-            random_account.private_key
-        )
+        os.environ["CALLER_MNEMONIC"] = mnemonic.from_private_key(random_account.private_key)
     else:
         logger.info("CALLER_MNEMONIC environment variable is set")
 
@@ -118,9 +120,7 @@ def setup_environment():
         try:
             caller_address = get_caller_address()
             dispenser = algorand_client.account.localnet_dispenser()
-            algorand_client.account.ensure_funded(
-                caller_address, dispenser, AlgoAmount(algo=100)
-            )
+            algorand_client.account.ensure_funded(caller_address, dispenser, AlgoAmount(algo=100))
             logger.info(f"Ensured account {caller_address} is funded")
         except Exception as e:
             logger.warning(f"Failed to setup dispenser or fund account: {e}")
