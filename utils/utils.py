@@ -1,6 +1,7 @@
 import os
 
-from algokit_utils import AlgorandClient, AssetInformation
+from algokit_utils import AlgorandClient, AssetDestroyParams, AssetInformation, SendSingleTransactionResult
+from asa_metadata_registry import AsaMetadataRegistry, MetadataSource
 
 
 def get_asset_id(asset_id: int | None = None) -> int:
@@ -15,3 +16,26 @@ def get_asset_id(asset_id: int | None = None) -> int:
 
 def get_asset(algorand_client: AlgorandClient, asset_id: int) -> AssetInformation:
     return algorand_client.asset.get_by_id(asset_id)
+
+
+def delete_asset(algorand_client: AlgorandClient, sender_address: str, asset_id: int) -> SendSingleTransactionResult:
+    return algorand_client.send.asset_destroy(
+        AssetDestroyParams(
+            sender=sender_address,
+            asset_id=asset_id,
+        )
+    )
+
+
+def check_existence(registry: AsaMetadataRegistry, asset_id: int, needs_metadata: bool = True) -> None:
+    """Check asset and metadata existence."""
+    existence = registry.read.arc89_check_metadata_exists(
+        asset_id=asset_id,
+        source=MetadataSource.BOX,
+    )
+    if not existence.asa_exists:
+        raise Exception(f"ASA {asset_id} does not exist")
+    if existence.metadata_exists and not needs_metadata:
+        raise Exception(f"Metadata already exists for asset {asset_id}")
+    if not existence.metadata_exists and needs_metadata:
+        raise Exception(f"Metadata does not exist for asset {asset_id}")

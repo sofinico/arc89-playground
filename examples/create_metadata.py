@@ -19,15 +19,14 @@ from asa_metadata_registry import (
     IrreversibleFlags,
     MbrDelta,
     MetadataFlags,
-    MetadataSource,
     ReversibleFlags,
     complete_partial_asset_url,
 )
 from asa_metadata_registry._generated.asa_metadata_registry_client import AsaMetadataRegistryClient
 
 from config import config
+from utils import check_existence, get_asset, get_asset_id
 from utils.runtime import get_algorand_client, get_caller_signer
-from utils.utils import get_asset, get_asset_id
 
 logger = logging.getLogger(__name__)
 
@@ -60,17 +59,6 @@ DEPRECATED_BY = 0
 # ==========================================================================================================
 
 
-def _check_existence(registry: AsaMetadataRegistry, asset_id: int) -> None:
-    existence = registry.read.arc89_check_metadata_exists(
-        asset_id=asset_id,
-        source=MetadataSource.BOX,
-    )
-    if not existence.asa_exists:
-        raise Exception(f"ASA {asset_id} does not exist")
-    if existence.metadata_exists:
-        raise Exception(f"Metadata already exists for asset {asset_id}")
-
-
 def create_metadata(
     algorand_client: AlgorandClient, caller: SigningAccount, asset_id: int
 ) -> tuple[AssetMetadata, MbrDelta]:
@@ -81,7 +69,7 @@ def create_metadata(
         default_signer=caller.signer,
     )
     registry = AsaMetadataRegistry.from_app_client(app_client, algod=algorand_client.client.algod)
-    _check_existence(registry, asset_id)
+    check_existence(registry, asset_id, False)
 
     metadata = AssetMetadata.from_json(
         asset_id=asset_id,
@@ -91,8 +79,8 @@ def create_metadata(
         arc3_compliant=METADATA_FLAGS.irreversible.arc3,
     )
 
-    mbrDelta = registry.write.create_metadata(asset_manager=caller, metadata=metadata)
-    return metadata, mbrDelta
+    mbr_result = registry.write.create_metadata(asset_manager=caller, metadata=metadata)
+    return metadata, mbr_result
 
 
 def main() -> int:

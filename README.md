@@ -14,11 +14,9 @@ poetry install
 
 ```bash
 cp .env.example .env
-cp .env.testnet.example .env.testnet
-cp .env.localnet.example .env.localnet
 ```
 
-`.env` is solely used for configuring the network (`testnet` or `localnet`). The configurations per network are stored in `.env.testnet` and `.env.localnet`.
+The `.env` file contains all configuration for both `localnet` and `testnet`. Each variable is suffixed with `_LOCALNET` or `_TESTNET`. Set the `NETWORK` variable to choose which configuration to use.
 
 3. Run one-time setup (deploys registry on localnet and writes env values):
 
@@ -33,13 +31,53 @@ make setup
 Create an ASA on the configured network. Set params in the [examples/create_asa.py](examples/create_asa.py) file.
 
 ```bash
-poetry run python -m examples.create_asa
+make create-asa
 ```
 
-To use an already created ASA, skip this step and set `ASSET_ID` env variable in the respective `.env.<network>` file or just:
+To use an already created ASA, skip this step and set `ASSET_ID_LOCALNET` or `ASSET_ID_TESTNET` in your `.env` file, or export it directly:
 
 ```bash
 export ASSET_ID=<your-asset-id>
+```
+
+### 2. Get ASA information
+
+Fetch ASA details from the configured network.
+
+```bash
+make get-asa
+```
+
+### 3. Create metadata
+
+Create ARC-89 metadata for an ASA. Set params in the [examples/create_metadata.py](examples/create_metadata.py) file.
+
+```bash
+make create-metadata
+```
+
+### 4. Get metadata
+
+Fetch ARC-89 metadata for an ASA from the configured network.
+
+```bash
+make get-metadata
+```
+
+### 5. Delete metadata
+
+Delete ARC-89 metadata for an ASA.
+
+```bash
+make delete-metadata
+```
+
+### 6. Delete ASA
+
+Delete an ASA on the configured network.
+
+```bash
+make delete-asa
 ```
 
 ## Developers
