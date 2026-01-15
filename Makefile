@@ -1,4 +1,4 @@
-.PHONY: setup lint format type-check new-wallet create-asa create-metadata
+.PHONY: setup lint format type-check new-address create-asa get_asa create-metadata
 
 help:
 	@echo "Available commands:"
@@ -6,9 +6,10 @@ help:
 	@echo "  lint          		 Run linting"
 	@echo "  format        		 Format code"
 	@echo "  type-check    		 Run type checking"
-	@echo "  new-wallet    		 Create a new Algorand address"
+	@echo "  new-address    	 Create a new Algorand address"
 	@echo "  create-asa    		 Create a new ASA on the configured network"
-	@echo "  create-metadata 	 Create ARC-89 metadata for an ASA"
+	@echo "  get-asa	 		 Fetch ASA information from the configured network"
+	@echo "  create-metadata 	 Create ARC-89 metadata for an ASA on the configured network"
 
 setup:
 	poetry run python config.py
@@ -30,6 +31,9 @@ new-address:
 
 create-asa:
 	poetry run python -m examples.create_asa
+
+get-asa:
+	poetry run python -m examples.get_asa
 
 create-metadata:
 	poetry run python -m examples.create_metadata

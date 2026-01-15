@@ -6,17 +6,15 @@ Prerequisites:
 - In testnet, CALLER_MNEMONIC's account must be funded to operate. See https://lora.algokit.io/testnet/fund.
 """
 
-import json
 import logging
-from typing import Any
 
-from algokit_utils import AlgorandClient
+from algokit_utils import AlgorandClient, SendSingleAssetCreateTransactionResult
 from algokit_utils.transactions import AssetCreateParams
 from asa_metadata_registry import Arc90Compliance, Arc90Uri
 from dotenv import set_key
 
 from config import config
-from utils.runtime import get_algorand_client, get_caller_address
+from utils import get_algorand_client, get_caller_address
 
 logger = logging.getLogger(__name__)
 
@@ -39,21 +37,13 @@ METADATA_HASH = b"\x00" * 32
 # ==========================================================================================================
 
 
-def _create_partial_arc90_uri(compliance: Arc90Compliance | None = None) -> str:
-    if compliance is None:
-        compliance = ARC90_COMPLIANCE
-    partial_uri = Arc90Uri(
-        netauth=config.arc90_netauth,
-        app_id=config.metadata_registry_app_id,
-        box_name=None,  # partial: no box value
-        compliance=compliance,
-    )
-    uri = partial_uri.to_uri()
-    logger.info(f"Created partial ARC-90 URI: {uri}")
-    return uri
+def get_arc90_partial_uri(compliance: Arc90Compliance = ARC90_COMPLIANCE) -> str:
+    return Arc90Uri(
+        netauth=config.arc90_netauth, app_id=config.metadata_registry_app_id, box_name=None, compliance=compliance
+    ).to_uri()
 
 
-def create_asset(algorand_client: AlgorandClient, sender_address: str) -> Any:
+def create_asset(algorand_client: AlgorandClient, sender_address: str) -> SendSingleAssetCreateTransactionResult:
     result = algorand_client.send.asset_create(
         AssetCreateParams(
             sender=sender_address,
@@ -66,11 +56,10 @@ def create_asset(algorand_client: AlgorandClient, sender_address: str) -> Any:
             clawback=sender_address,
             unit_name=UNIT_NAME,
             asset_name=ASSET_NAME,
-            url=_create_partial_arc90_uri(ARC90_COMPLIANCE),
+            url=get_arc90_partial_uri(ARC90_COMPLIANCE),
             metadata_hash=METADATA_HASH,
         )
     )
-    logger.info(f"Created asset: {result}")
     return result
 
 
@@ -79,17 +68,16 @@ def main() -> int:
     algorand_client = get_algorand_client()
     caller_address = get_caller_address()
 
-    fungible_result = create_asset(algorand_client, caller_address)
+    result = create_asset(algorand_client, caller_address)
 
-    result_info = {
-        "asset_id": fungible_result.asset_id,
-        "tx_id": fungible_result.tx_id,
-        "confirmed_round": fungible_result.confirmation.get("confirmed-round"),
-    }
-    logger.info(json.dumps(result_info, indent=2))
+    logger.info(f"Asset ID: {result.asset_id}")
+    logger.info(f"ARC-90 partial URI: {get_arc90_partial_uri(ARC90_COMPLIANCE)}")
+    logger.info(f"Tx ID: {result.tx_id}")
+    if isinstance(result.confirmation, dict):
+        logger.info(f"Confirmed round: {result.confirmation.get('confirmed-round')}")
 
-    set_key(config.env_path, "ASSET_ID", str(fungible_result.asset_id), quote_mode="never", export=True)
-    logger.info(f"Updated {config.env_path.name} with ASSET_ID={fungible_result.asset_id}")
+    set_key(config.env_path, "ASSET_ID", str(result.asset_id), quote_mode="never", export=True)
+    logger.info(f"Updated {config.env_path.name} with ASSET_ID={result.asset_id}")
     return 0
 
 

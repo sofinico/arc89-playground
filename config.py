@@ -35,7 +35,8 @@ def _load_config() -> Config:
         metadata_registry_app_id=int(os.environ["METADATA_REGISTRY_APP_ID"]),
         env_path=env_path,
     )
-    logger.info("Configuration loaded: %s", cfg.__dict__)
+    logger.info(f"Network: {cfg.network}")
+    logger.info(f"Metadata Registry App ID: {cfg.metadata_registry_app_id}")
     return cfg
 
 

@@ -118,6 +118,7 @@ def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     network, env_path = load_env_files(Path(__file__).resolve().parent.parent)
     algorand = AlgorandClient.from_environment()
+    logger.info("Network: %s", network)
 
     _ensure_registry_app_id(algorand, env_path, network)
     caller_mnemonic = _ensure_caller_mnemonic(algorand, network, env_path)

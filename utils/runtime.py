@@ -36,12 +36,17 @@ def get_caller_signer() -> SigningAccount:
 
 
 def _ensure_signer_configured() -> None:
-    """Configure the caller signer on the singleton AlgorandClient instance."""
+    """Configure the caller signer on the singleton AlgorandClient instance if CALLER_MNEMONIC is available."""
     global _signer_configured, algorand_client
     if _signer_configured:
         return
 
     assert algorand_client is not None, "AlgorandClient must be initialized before configuring signer"
-    caller = get_caller_signer()
-    algorand_client.account.set_signer(caller.address, caller.signer)
-    _signer_configured = True
+
+    try:
+        caller = get_caller_signer()
+        algorand_client.account.set_signer(caller.address, caller.signer)
+        _signer_configured = True
+    except ValueError:
+        # CALLER_MNEMONIC not set - skip signer configuration for read-only operations
+        pass
