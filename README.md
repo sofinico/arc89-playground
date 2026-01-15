@@ -80,6 +80,26 @@ Delete an ASA on the configured network.
 make delete-asa
 ```
 
+## FAQs
+
+[WIP]
+
+<details>
+<summary>What is the ARC-89 Metadata Registry?</summary>
+</details>
+
+<details>
+<summary>An already created ASA, can be ARC-89 compliant?</summary>
+</details>
+
+<details>
+<summary>What is the difference between ARC-89 and ARC-90 compliance?</summary>
+</details>
+
+<details>
+<summary>Can an ASA be ARC-3 and ARC-89 compliant?</summary>
+</details>
+
 ## Developers
 
 The repo uses pre-commit hooks to ensure code quality:
