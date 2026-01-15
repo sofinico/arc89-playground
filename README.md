@@ -2,7 +2,7 @@
 
 Playground for exploring the ARC-89 metadata registry on Algorand.
 
-## Quickstart
+## Setup
 
 1. Install dependencies:
 
@@ -28,10 +28,18 @@ make setup
 
 ## Running Examples
 
-Run any example:
+### 1. Create an ASA (optional)
+
+Create an ASA on the configured network. Set params in the [examples/create_asa.py](examples/create_asa.py) file.
 
 ```bash
-poetry run python examples/01_create_asa.py
+poetry run python -m examples.create_asa
+```
+
+To use an already created ASA, skip this step and set `ASSET_ID` env variable in the respective `.env.<network>` file or just:
+
+```bash
+export ASSET_ID=<your-asset-id>
 ```
 
 ## Developers

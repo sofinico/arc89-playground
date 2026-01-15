@@ -18,10 +18,11 @@ class Config:
     network: str
     arc90_netauth: str
     metadata_registry_app_id: int
+    env_path: Path
 
 
 def _load_config() -> Config:
-    network, _ = load_env_files(Path(__file__).resolve().parent)
+    network, env_path = load_env_files(Path(__file__).resolve().parent)
 
     if not os.getenv("ARC90_NETAUTH"):
         raise ValueError("ARC90_NETAUTH environment variable is not set")
@@ -32,6 +33,7 @@ def _load_config() -> Config:
         network=network,
         arc90_netauth=os.environ["ARC90_NETAUTH"],
         metadata_registry_app_id=int(os.environ["METADATA_REGISTRY_APP_ID"]),
+        env_path=env_path,
     )
     logger.info("Configuration loaded: %s", cfg.__dict__)
     return cfg
@@ -44,11 +46,10 @@ def get_config() -> Config:
     return _config
 
 
-# Avoid eager config loading when running `python config.py` for the one-time setup.
-config = get_config() if __name__ != "__main__" else None
-
-
 if __name__ == "__main__":
     from utils.setup import main
 
     raise SystemExit(main())
+else:
+    # Load config for all imports except when running setup
+    config = get_config()
