@@ -21,7 +21,7 @@ from utils.runtime import get_algorand_client, get_caller_address
 logger = logging.getLogger(__name__)
 
 # ==========================================================================================================
-# CONFIGURATION - Edit these values for your use case
+# ASA CREATION PARAMS - Edit these values for your use case
 # ==========================================================================================================
 
 TOTAL_SUPPLY = 89_000_000_000_000

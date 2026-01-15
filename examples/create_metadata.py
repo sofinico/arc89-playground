@@ -1,16 +1,16 @@
 """
 Create ARC-89 metadata for an existing ASA.
 
-The registry stores a header + body. You only provide the body (JSON bytes) and flags;
-the header is derived and stored on-chain:
-- identifiers byte (shortness bit derived from size)
-- reversible flags byte (ARC-20 / ARC-62)
-- irreversible flags byte (ARC-3 / ARC-89 native / immutable)
-- hash fields computed from identifiers, flags, and metadata pages
-- last modified + deprecated_by tracked by the registry
+This example shows how to write ARC-89 metadata bytes and flags to the registry.
+
+Prerequisites:
+- Run `make setup`
+- In testnet, CALLER_MNEMONIC's account must be funded to operate. See https://lora.algokit.io/testnet/fund.
+- The CALLER is the manager of the ASA (already satisfied if ASA was created via `make create-asa`).
 """
 
 import json
+import os
 from typing import Any
 
 from algokit_utils import (
@@ -37,8 +37,38 @@ from asa_metadata_registry._generated.asa_metadata_registry_client import (
     Arc89ExtraPayloadArgs,
     AsaMetadataRegistryClient,
 )
+from dotenv import load_dotenv
 
-from setup import config, get_algorand_client, get_caller_signer
+from config import config
+from utils.runtime import get_algorand_client, get_caller_signer
+
+# ============================================================================
+# METADATA CREATION PARAMS - Edit these values for your use case
+# ============================================================================
+
+# Set this to override the `ASSET_ID` env variable (or leave as None to use env var)
+ASSET_ID: int | None = None
+
+METADATA_JSON = {
+    "name": "ARC-89 & ARC-90 Compliance ASA Example",
+    "description": "Example metadata written to the ARC-89 registry.",
+    "version": 1,
+}
+
+METADATA_FLAGS = MetadataFlags(
+    reversible=ReversibleFlags(
+        arc20=False,  # ARC-20 compliance (reversible)
+        arc62=False,  # ARC-62 compliance (reversible)
+    ),
+    irreversible=IrreversibleFlags(
+        arc3=False,  # ARC-3 compliance (requires ARC-3 URL/name formatting)
+        arc89_native=True,  # Enforces ARC-90 URI prefix in the ASA URL
+        immutable=False,  # Prevents future metadata updates if True
+    ),
+)
+
+DEPRECATED_BY = 0
+# ============================================================================
 
 
 def _resolve_registry(
@@ -49,9 +79,9 @@ def _resolve_registry(
     netauth = config.arc90_netauth
 
     if not app_id:
-        raise ValueError("METADATA_REGISTRY_APP_ID is not configured")
+        raise ValueError(f"Registry app ID is not configured for {config.network} in config.py")
     if not netauth:
-        raise ValueError("ARC90_NETAUTH is not configured")
+        raise ValueError(f"ARC90_NETAUTH is not configured for {config.network}")
 
     app_client = algorand_client.client.get_typed_app_client_by_id(
         AsaMetadataRegistryClient,
@@ -85,7 +115,7 @@ def _get_asset_params(algorand_client: AlgorandClient, asset_id: int) -> dict[st
     try:
         info = algorand_client.client.algod.asset_info(asset_id)
     except Exception as exc:
-        raise ValueError(f"Asset {asset_id} not found on network") from exc
+        raise ValueError(f"Asset {asset_id} not found on {config.network}") from exc
     if not isinstance(info, dict):
         raise ValueError(f"Unexpected asset info type for {asset_id}")
     params = info.get("params", {})
@@ -118,7 +148,7 @@ def _assert_preconditions(
     params = _get_asset_params(algorand_client, asset_id)
     manager = str(params.get("manager") or "")
     if not manager:
-        raise ValueError("ASA has no manager; metadata updates are not permitted")
+        raise ValueError(f"ASA has no manager on {config.network}; metadata updates are not permitted")
     if manager != caller.address:
         raise ValueError(f"Caller must be ASA manager (manager={manager}, caller={caller.address})")
     if flags.irreversible.arc3 and not _is_arc3_compliant(params):
@@ -131,11 +161,13 @@ def _assert_preconditions(
         ).to_uri()
         url = str(params.get("url") or "")
         if not url.startswith(partial_uri):
-            raise ValueError("ARC-89 native flag set but ASA URL does not start with the " "ARC-90 partial URI")
+            raise ValueError(
+                "ARC-89 native flag set but ASA URL does not start with the ARC-90 prefix " f"({partial_uri})"
+            )
 
     existence = client.send.arc89_check_metadata_exists(args=Arc89CheckMetadataExistsArgs(asset_id=asset_id)).abi_return
     if existence and existence.metadata_exists:
-        raise ValueError("Metadata already exists for this ASA")
+        raise ValueError(f"Metadata already exists for ASA {asset_id}")
 
 
 def _describe_headers(metadata: AssetMetadata) -> dict[str, Any]:
@@ -190,6 +222,7 @@ def create_arc89_metadata(
     # - last_modified_round + deprecated_by: maintained by the registry
     header_info = _describe_headers(metadata)
 
+    # MBR payment is required because the registry stores metadata in boxes.
     mbr_delta = metadata.get_mbr_delta(old_size=None)
     mbr_payment = _create_mbr_payment_txn(client, caller, int(mbr_delta.amount))
 
@@ -238,6 +271,7 @@ def create_arc89_metadata(
     partial_uri = Arc90Uri.parse(asset_url)
     metadata_uri = partial_uri.with_asset_id(asset_id).to_uri()
 
+    # Output includes the registry app, metadata URI, flags, and header details.
     result = {
         "app_id": client.app_id,
         "asset_id": asset_id,
@@ -256,25 +290,27 @@ def create_arc89_metadata(
     return json.dumps(result, indent=2)
 
 
+def get_asset_id() -> int:
+    if ASSET_ID:
+        return ASSET_ID
+    load_dotenv(dotenv_path=config.env_path)
+    asset_id = os.getenv("ASSET_ID")
+    if not asset_id:
+        raise ValueError("Either ASSET_ID environment variable or ASSET_ID local constant must be set")
+    return int(asset_id)
+
+
 def main() -> int:
     algorand_client = get_algorand_client()
     caller = get_caller_signer()
 
-    # NOTE: Configure your asset id, metadata, flags, and deprecated_by here.
     output = create_arc89_metadata(
         algorand_client,
         caller,
-        asset_id=753492624,
-        metadata_obj={
-            "name": "ARC-89 & ARC-90 Compliance ASA Example",
-            "description": "Example metadata written to the ARC-89 registry.",
-            "version": 1,
-        },
-        flags=MetadataFlags(
-            reversible=ReversibleFlags(arc20=False, arc62=False),
-            irreversible=IrreversibleFlags(arc3=False, arc89_native=True, immutable=False),
-        ),
-        deprecated_by=0,
+        asset_id=get_asset_id(),
+        metadata_obj=METADATA_JSON,
+        flags=METADATA_FLAGS,
+        deprecated_by=DEPRECATED_BY,
     )
     print(output)
     return 0
