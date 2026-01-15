@@ -7,7 +7,6 @@ Prerequisites:
 - The CALLER is the manager of the ASA (already satisfied if ASA was created via `make create-asa`).
 """
 
-import json
 import logging
 
 from algokit_utils import (
@@ -109,7 +108,6 @@ def main() -> int:
     logger.info(f"ARC-90 URI: {complete_partial_asset_url(asset.url or '', asset_id)}")
     logger.info(f"Minimum Balance Requirement (MBR) delta: {mbrDelta.amount}")
     logger.info(f"ARC-89 metadata hash: {metadata.compute_arc89_metadata_hash().hex()}")
-    logger.info(json.dumps(metadata.__dict__, indent=2))
     return 0
 
 

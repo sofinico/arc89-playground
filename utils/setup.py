@@ -11,20 +11,73 @@ from dotenv import load_dotenv, set_key
 
 logger = logging.getLogger(__name__)
 
+# Environment variable names that have network-specific suffixes
+_NETWORK_SPECIFIC_VARS = (
+    "ALGOD_SERVER",
+    "ALGOD_PORT",
+    "ALGOD_TOKEN",
+    "INDEXER_SERVER",
+    "INDEXER_PORT",
+    "INDEXER_TOKEN",
+    "ARC90_NETAUTH",
+    "METADATA_REGISTRY_APP_ID",
+    "CALLER_MNEMONIC",
+    "ASSET_ID",
+)
+
 
 # Environment helpers
 def get_network() -> str:
+    """Get the configured network from environment.
+
+    Returns:
+        Network name ('localnet' or 'testnet')
+
+    Raises:
+        ValueError: If NETWORK is not set to a valid value
+    """
     network = os.getenv("NETWORK", "localnet").lower()
     if network not in ("localnet", "testnet"):
         raise ValueError(f"NETWORK must be 'localnet' or 'testnet', got: {network}")
     return network
 
 
-def load_env_files(project_root: Path) -> tuple[str, Path]:
-    load_dotenv(dotenv_path=project_root / ".env")
-    network = get_network()
-    env_path = project_root / f".env.{network}"
+def _map_network_variables(network: str) -> None:
+    """Map network-specific suffixed variables to their base names.
+
+    For example, if network is 'localnet', maps ALGOD_SERVER_LOCALNET -> ALGOD_SERVER.
+
+    Args:
+        network: The network name ('localnet' or 'testnet')
+    """
+    suffix = f"_{network.upper()}"
+
+    for var_name in _NETWORK_SPECIFIC_VARS:
+        suffixed_var = f"{var_name}{suffix}"
+        value = os.getenv(suffixed_var)
+        if value is not None:
+            os.environ[var_name] = value
+
+
+def load_network_env(project_root: Path) -> tuple[str, Path]:
+    """Load environment configuration and map network-specific variables.
+
+    Loads the .env file and maps network-specific variables (suffixed with
+    _LOCALNET or _TESTNET) to their base names based on the NETWORK setting.
+
+    Args:
+        project_root: Root directory of the project containing .env file
+
+    Returns:
+        Tuple of (network_name, env_file_path)
+
+    Raises:
+        ValueError: If NETWORK is not set to a valid value
+    """
+    env_path = project_root / ".env"
     load_dotenv(dotenv_path=env_path)
+    network = get_network()
+    _map_network_variables(network)
     return network, env_path
 
 
@@ -78,7 +131,7 @@ def _ensure_registry_app_id(algorand: AlgorandClient, env_path: Path, network: s
             except Exception:
                 logger.info("Existing METADATA_REGISTRY_APP_ID is not valid on localnet; redeploying")
         app_id = _deploy_localnet_registry(algorand)
-        set_key(env_path, "METADATA_REGISTRY_APP_ID", str(app_id), quote_mode="never", export=True)
+        set_key(env_path, f"METADATA_REGISTRY_APP_ID_{network.upper()}", str(app_id), quote_mode="never")
         return app_id
 
     # Testnet: use default deployment without persisting to .env.
@@ -97,11 +150,13 @@ def _ensure_caller_mnemonic(algorand: AlgorandClient, network: str, env_path: Pa
         logger.info("CALLER_MNEMONIC already set")
         return caller_mnemonic
     if network != "localnet":
-        raise ValueError("CALLER_MNEMONIC is not set. Set it in .env.testnet or export it in your shell.")
+        raise ValueError(
+            f"CALLER_MNEMONIC is not set. Set CALLER_MNEMONIC_{network.upper()} in .env or export it in your shell."
+        )
 
     random_account = algorand.account.random()
     caller_mnemonic = str(mnemonic.from_private_key(random_account.private_key))
-    set_key(env_path, "CALLER_MNEMONIC", caller_mnemonic, quote_mode="never", export=True)
+    set_key(env_path, f"CALLER_MNEMONIC_{network.upper()}", caller_mnemonic, quote_mode="never")
     logger.info("Generated localnet caller account: %s", random_account.address)
     return caller_mnemonic
 
@@ -116,7 +171,7 @@ def _ensure_localnet_funding(algorand: AlgorandClient, caller_mnemonic: str) -> 
 
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    network, env_path = load_env_files(Path(__file__).resolve().parent.parent)
+    network, env_path = load_network_env(Path(__file__).resolve().parent.parent)
     algorand = AlgorandClient.from_environment()
     logger.info("Network: %s", network)
 
