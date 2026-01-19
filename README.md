@@ -13,18 +13,25 @@ poetry install
 2. Copy environment configuration:
 
 ```bash
-cp .env.example .env
-cp .env.localnet.example .env.localnet
-cp .env.testnet.example .env.testnet
+make env-files
 ```
 
-Set the `NETWORK` variable in `.env` to choose which configuration to use. You can also override it per command, e.g. `NETWORK=testnet make create-asa`, or use `make use-localnet` / `make use-testnet`.
+3. Set the network to use:
 
-3. Run one-time setup (deploys registry on localnet and writes env values):
+```bash
+make use-localnet # or
+make use-testnet
+```
+
+You can switch between networks with these commands. They set the `NETWORK` environment variable. You can also manually switch it in the `.env` or override it per command, e.g. `NETWORK=testnet make create-asa`.
+
+4. Run setup (required after switching networks):
 
 ```bash
 make setup
 ```
+
+This deploys the registry on localnet (or validates testnet configuration) and sets necessary environment variables.
 
 ## Running Examples
 

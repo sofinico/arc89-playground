@@ -55,9 +55,13 @@ delete-metadata:
 
 use-localnet:
 	poetry run python scripts/switch_network.py localnet
+	@echo "\nEnsure algokit localnet is running (\`algokit localnet status\`)" 
+	@echo "Run \`make setup\` to set up the environment\n"
 
 use-testnet:
 	poetry run python scripts/switch_network.py testnet
+	@echo "\nEnsure CALLER_MNEMONIC is set (\`export CALLER_MNEMONIC=...\` or set in .env.testnet) and funded\n" 
+	@echo "Run \`make setup\` to set up the environment\n"
 
 env-files:
 	cp .env.example .env
