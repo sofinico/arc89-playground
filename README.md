@@ -14,9 +14,11 @@ poetry install
 
 ```bash
 cp .env.example .env
+cp .env.localnet.example .env.localnet
+cp .env.testnet.example .env.testnet
 ```
 
-The `.env` file contains all configuration for both `localnet` and `testnet`. Each variable is suffixed with `_LOCALNET` or `_TESTNET`. Set the `NETWORK` variable to choose which configuration to use.
+Set the `NETWORK` variable in `.env` to choose which configuration to use. You can also override it per command, e.g. `NETWORK=testnet make create-asa`, or use `make use-localnet` / `make use-testnet`.
 
 3. Run one-time setup (deploys registry on localnet and writes env values):
 
@@ -34,7 +36,7 @@ Create an ASA on the configured network. Set params in the [examples/create_asa.
 make create-asa
 ```
 
-To use an already created ASA, skip this step and set `ASSET_ID_LOCALNET` or `ASSET_ID_TESTNET` in your `.env` file, or export it directly:
+To use an already created ASA, skip this step and set `ASSET_ID` in your `.env.localnet` or `.env.testnet` file, or export it directly:
 
 ```bash
 export ASSET_ID=<your-asset-id>
