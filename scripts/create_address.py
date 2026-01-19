@@ -7,9 +7,10 @@ def main() -> int:
 
     account = algorand_client.account.random()
 
-    print("\n=== Account ===")
-    print(f"Address:  {account.address}")
-    print(f"Mnemonic: {mnemonic.from_private_key(account.private_key)}")
+    print("\n=== Address ===")
+    print(f"{account.address}")
+    print("\n=== Mnemonic ===")
+    print(f"{mnemonic.from_private_key(account.private_key)}")
 
     return 0
 
