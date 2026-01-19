@@ -3,7 +3,9 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from utils.setup import load_network_env
+from asa_metadata_registry import DEFAULT_DEPLOYMENTS
+
+from utils.setup import LOCALNET_NETAUTH, load_env_files
 
 # Logging config
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -21,18 +23,32 @@ class Config:
     env_path: Path
 
 
-def _load_config() -> Config:
-    network, env_path = load_network_env(Path(__file__).resolve().parent)
+def _get_deployment_config(network: str) -> tuple[str, int]:
+    if network in DEFAULT_DEPLOYMENTS:
+        deployment = DEFAULT_DEPLOYMENTS[network]
+        if deployment.arc90_uri_netauth is None or deployment.app_id is None:
+            raise ValueError(f"Incomplete deployment config for network: {network}")
+        return deployment.arc90_uri_netauth, deployment.app_id
 
-    if not os.getenv("ARC90_NETAUTH"):
-        raise ValueError("ARC90_NETAUTH environment variable is not set. Run `make setup` or set it in .env")
-    if not os.getenv("METADATA_REGISTRY_APP_ID"):
-        raise ValueError("METADATA_REGISTRY_APP_ID is not set. Run `make setup` or set it in .env")
+    if network == "localnet":
+        metadata_registry_app_id_str = os.environ.get("METADATA_REGISTRY_APP_ID")
+        if not metadata_registry_app_id_str:
+            raise ValueError(
+                "METADATA_REGISTRY_APP_ID must be set for localnet. Run `make setup`, which deploys a localnet registry and sets environment variable"
+            )
+        return LOCALNET_NETAUTH, int(metadata_registry_app_id_str)
+
+    raise ValueError(f"Unsupported network: {network}")
+
+
+def _load_config() -> Config:
+    network, env_path = load_env_files(Path(__file__).resolve().parent)
+    arc90_netauth, metadata_registry_app_id = _get_deployment_config(network)
 
     cfg = Config(
         network=network,
-        arc90_netauth=os.environ["ARC90_NETAUTH"],
-        metadata_registry_app_id=int(os.environ["METADATA_REGISTRY_APP_ID"]),
+        arc90_netauth=arc90_netauth,
+        metadata_registry_app_id=metadata_registry_app_id,
         env_path=env_path,
     )
     logger.info(f"Network: {cfg.network}")

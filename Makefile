@@ -1,4 +1,4 @@
-.PHONY: setup lint format type-check new-address create-asa get-asa delete-asa create-metadata get-metadata delete-metadata
+.PHONY: setup lint format type-check new-address create-asa get-asa delete-asa create-metadata get-metadata delete-metadata use-localnet use-testnet env-files
 
 help:
 	@echo "Available commands:"
@@ -13,6 +13,9 @@ help:
 	@echo "  create-metadata 	 Create ARC-89 metadata for an ASA on the configured network"
 	@echo "  get-metadata 	     Get ARC-89 metadata for an ASA on the configured network"
 	@echo "  delete-metadata 	 Delete ARC-89 metadata for an ASA on the configured network"
+	@echo "  use-localnet   	 Set NETWORK=localnet in .env"
+	@echo "  use-testnet    	 Set NETWORK=testnet in .env"
+	@echo "  env-files      	 Copy example env files to .env, .env.localnet, .env.testnet"
 
 setup:
 	poetry run python config.py
@@ -49,3 +52,14 @@ get-metadata:
 
 delete-metadata:
 	poetry run python -m examples.delete_metadata
+
+use-localnet:
+	poetry run python scripts/switch_network.py localnet
+
+use-testnet:
+	poetry run python scripts/switch_network.py testnet
+
+env-files:
+	cp .env.example .env
+	cp .env.localnet.example .env.localnet
+	cp .env.testnet.example .env.testnet

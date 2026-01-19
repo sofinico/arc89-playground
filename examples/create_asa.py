@@ -76,9 +76,8 @@ def main() -> int:
     if isinstance(result.confirmation, dict):
         logger.info(f"Confirmed round: {result.confirmation.get('confirmed-round')}")
 
-    asset_id_var = f"ASSET_ID_{config.network.upper()}"
-    set_key(config.env_path, asset_id_var, str(result.asset_id), quote_mode="never")
-    logger.info(f"Updated {config.env_path.name} with {asset_id_var}={result.asset_id}")
+    set_key(config.env_path, "ASSET_ID", str(result.asset_id), quote_mode="never", export=True)
+    logger.info(f"Updated {config.env_path.name} with ASSET_ID={result.asset_id}")
     return 0
 
 

@@ -47,15 +47,12 @@ def main() -> int:
     metadata_json = record.json
 
     logger.info(
-        f"\nAsset Metadata Record for {asset_id}:\n"
+        f"\n\nAsset Metadata Record for {asset_id}:\n"
         f"  Registry App ID: {record.app_id}\n"
         f"  Asset ID: {record.asset_id}\n"
         f"  Metadata size: {record.body.size} bytes\n"
         f"  Is short: {record.body.is_short}\n"
-        f"  Is empty: {record.body.is_empty}"
-    )
-
-    logger.info(
+        f"  Is empty: {record.body.is_empty}\n"
         f"\nMetadata Header:\n"
         f"  Identifiers byte: {record.header.identifiers:#04x}\n"
         f"  Is short (from identifiers): {record.header.is_short}\n"
@@ -64,10 +61,10 @@ def main() -> int:
         f"  Is ARC-89 native: {record.header.is_arc89_native}\n"
         f"  Is deprecated: {record.header.is_deprecated}\n"
         f"  Last modified round: {record.header.last_modified_round}\n"
-        f"  Metadata hash: {record.header.metadata_hash.hex()}"
+        f"  Metadata hash: {record.header.metadata_hash.hex()}\n"
+        f"\nMetadata JSON:\n"
+        f"{json.dumps(metadata_json, indent=2)}\n"
     )
-
-    logger.info(f"\nMetadata JSON:\n" f"{json.dumps(metadata_json, indent=2)}")
     return 0
 
 
