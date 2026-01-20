@@ -93,10 +93,8 @@ make delete-asa
 
 ## FAQs
 
-[WIP]
-
 <details>
-<summary>What is the ARC-89 ASA Metadata Registry?</summary>
+<summary>What is the ARC-89 ASA Metadata Registry?</summary><br>
 The ASA Metadata Registry is a singleton smart contract application that provides on-chain JSON metadata storage for Algorand Standard Assets (ASAs), implementing the [ARC-89 specification](https://dev.algorand.co/arc-standards/arc-0089).
 
 There is exactly one storage box per ASA, addressable by Asset ID. The Asset Metadata Box is readable via Algod API (ledger queries) or the AVM (intra-app calls).
@@ -104,9 +102,9 @@ There is exactly one storage box per ASA, addressable by Asset ID. The Asset Met
 </details>
 
 <details>
-<summary>Who has the metadata authority?</summary>
+<summary>Who has the metadata authority?</summary><br>
 
-ARC-89 aligns metadata authority with the [**ASA Manager**](<(https://dev.algorand.co/concepts/assets/overview/#mutable-asset-parameters)>) role, who can:
+ARC-89 aligns metadata authority with the [**ASA Manager**](https://dev.algorand.co/concepts/assets/overview/#mutable-asset-parameters) role, who can:
 
 - Create/update/delete metadata
 - Toggle flags
@@ -118,7 +116,7 @@ NOTE: The ASA Manager Address MUST NOT be set to the Zero Address on creation. I
 </details>
 
 <details>
-<summary>How is the Asset Metadata Box structured?</summary>
+<summary>How is the Asset Metadata Box structured?</summary><br>
 
 [**Header**](https://dev.algorand.co/arc-standards/arc-0089/#metadata-header) Encodes additional attributes of the Asset Metadata.
 
@@ -134,18 +132,20 @@ NOTE: The ASA Manager Address MUST NOT be set to the Zero Address on creation. I
 </details>
 
 <details>
-<summary>An already existing ASA, can be ARC-89 compliant?</summary>
+<summary>Can an existing ASA become ARC-89 compliant?</summary><br>
 
 Yes! An ASA created before the ARC-89 standard can become ARC-89 compliant by adding metadata to it through the ASA Metadata Registry. So **[backwards compatibility](https://dev.algorand.co/arc-standards/arc-0089/#backwards-compatibility) for existing ASAs is possible**.
 
-However, since the Asset URL (`au`) field is immutable, existing ASAs could be ARC-89 compliant but never [ARC-90](https://dev.algorand.co/arc-standards/arc-0090/) compliant, as this means the URL must have the form `algorand://<netauth>/app/<singleton_arc89_app_id>?box=<base64url_encoded_asset_id>#arc<A>+<B>+<C>...`.
+However, since the Asset URL (`au`) field is immutable, an existing (pre-ARC-89) ASA with a non-ARC-90 URL can never become ARC-90 compliant. It can only be ARC-90/ARC-89-native if its current URL already starts with the ARC-89 partial ARC-90 URI:
+`algorand://<netauth>/app/<singleton_arc89_app_id>?box=`
+(optionally with a compliance fragment like `#arc<A>+<B>+<C>...`).
 
-As for the current registry implementation, attempting to create a flagged ARC-89 native metadata on ASAs with non-compliant URLs [will fail](https://github.com/algorandfoundation/arc89/blob/main/tests/smart_contract/test_arc89_create_metadata.py#L411).
+As for the current registry implementation, attempting to create flagged ARC-89 native metadata on ASAs with non-compliant URLs [will fail](https://github.com/algorandfoundation/arc89/blob/main/tests/smart_contract/test_arc89_create_metadata.py#L411).
 
 </details>
 
 <details>
-<summary>What is the difference between ARC-89 and ARC-90 compliance?</summary>
+<summary>What is the difference between ARC-89 and ARC-90 compliance?</summary><br>
 
 ARC-89 is the metadata registry standard that defines how JSON metadata is stored on-chain in smart contract boxes, while ARC-90 is the URI scheme that provides a unified Algorand URI scheme which can be used to reference on-chain resources in general, and metadata in particular.
 
@@ -159,22 +159,24 @@ Compliance scenarios:
 
 This can be the case of ASAs created before the ARC-89 standard.
 
-1. **Both ARC-89 and ARC-90 compliant**:
+2. **Both ARC-89 and ARC-90 compliant**:
 
    - Store metadata in the registry
    - Set the `IRR_FLG_ARC89_NATIVE` flag
-   - Use ARC-90 URI format pointing to the registry box
+   - Set URL (`au`) to the ARC-89 partial ARC-90 URI for the registry app (clients resolve the full ARC-90 Asset Metadata URI by adding the asset id box name)
 
-Current registry implementation enforces ARC-90 compliance when the `IRR_FLG_ARC89_NATIVE` irreversible flag is set.
+Current registry implementation validates the required partial-URI prefix when the `IRR_FLG_ARC89_NATIVE` irreversible flag is set; the ARC-90 compliance fragment is optional.
 
 </details>
 
 <details>
-<summary>Can an ASA be ARC-3 and ARC-89 compliant?</summary>
+<summary>Can an ASA be ARC-3 and ARC-89 compliant?</summary><br>
 
 Yes, an ASA can be both ARC-3 and ARC-89 compliant simultaneously. This dual compliance allows an ASA to benefit from both NFT metadata standards (ARC-3) and on-chain metadata storage (ARC-89).
 
 Since ARC-3 uses its own hash convention, if the metadata is flagged as ARC-3 and as ARC-89, the hash check is bypassed on metadata creation.
+
+ARC-90 fragment special case: when declaring ARC-3 compliance, the fragment MUST be exactly `#arc3` with no additional ARC identifiers.
 
 </details>
 
