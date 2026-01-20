@@ -21,6 +21,7 @@ from asa_metadata_registry import (
     MetadataFlags,
     ReversibleFlags,
     complete_partial_asset_url,
+    is_arc3_metadata,
 )
 from asa_metadata_registry._generated.asa_metadata_registry_client import AsaMetadataRegistryClient
 
@@ -76,7 +77,7 @@ def create_metadata(
         json_obj=METADATA_JSON,
         flags=METADATA_FLAGS,
         deprecated_by=DEPRECATED_BY,
-        arc3_compliant=METADATA_FLAGS.irreversible.arc3,
+        arc3_compliant=is_arc3_metadata(METADATA_JSON),
     )
 
     mbr_result = registry.write.create_metadata(asset_manager=caller, metadata=metadata)
