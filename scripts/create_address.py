@@ -11,10 +11,11 @@ def main() -> int:
     print(f"{account.address}")
     print("\n=== Mnemonic ===")
     print(f"{mnemonic.from_private_key(account.private_key)}")
+    print("\n=== Export script ===")
+    print(f'export CALLER_MNEMONIC="{mnemonic.from_private_key(account.private_key)}"')
 
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-#
