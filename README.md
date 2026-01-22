@@ -10,6 +10,14 @@ Playground for exploring the ARC-89 metadata registry on Algorand.
 poetry install
 ```
 
+> [!NOTE]\
+> The ARC-89 SDK dependency (`asa-metadata-registry`) is pulled from GitHub because it is not published to PyPI yet.
+> If you want to use a local checkout, update `pyproject.toml` to point at a local path and run `poetry install` to reinstall:
+>
+> ```toml
+> asa-metadata-registry = { path = "../arc89", develop = true }
+> ```
+
 2. Copy environment configuration:
 
 ```bash
@@ -36,6 +44,8 @@ make setup
 ```
 
 ## Running Examples
+
+For additional end-to-end examples, see [`arc89/notebooks/sdk_demo.ipynb`](https://github.com/algorandfoundation/arc89/blob/main/notebooks/sdk_demo.ipynb).
 
 ### 1. Create an ASA (optional)
 
@@ -92,6 +102,9 @@ make delete-asa
 ```
 
 ## FAQs
+
+> [!NOTE]\
+> These questions and answers are under construction. However, everything you find here is correct.
 
 <details>
 <summary>What is the ARC-89 ASA Metadata Registry?</summary><br>
