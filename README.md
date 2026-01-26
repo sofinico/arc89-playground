@@ -71,11 +71,19 @@ make get-asa
 
 ### 3. Create metadata
 
-Create ARC-89 metadata for an ASA. Set params in the [examples/create_metadata.py](examples/create_metadata.py) file.
+Create ARC-89 metadata for an ASA. You will be prompted for the ASA parameters in the CLI. Metadata JSON defaults to `metadata/example.json` (override with `METADATA_JSON_PATH` or `--metadata-json`).
 
 ```bash
 make create-metadata
 ```
+
+Non-interactive:
+
+```bash
+poetry run python -m examples.create_metadata --no-prompt --asset-id <asset-id> --metadata-json path/to/metadata.json
+```
+
+Non-interactive runs require `--asset-id` or `ASSET_ID` env var and use the default metadata flags unless you edit the defaults in `examples/create_metadata.py`.
 
 ### 4. Get metadata
 
